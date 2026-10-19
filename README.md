@@ -1,6 +1,6 @@
 # Simon Says – GNAT Health Check
 
-[![Zig](https://img.shields.io/badge/Zig-0.16-orange?logo=zig)](https://ziglang.org/)
+[![Zig](https://img.shields.io/badge/Zig-0.17-orange?logo=zig)](https://ziglang.org/)
 [![Ada](https://img.shields.io/badge/Ada-GNAT-blue?logo=ada)](https://www.adacore.com/)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-blue)](LICENSE)
 
@@ -45,7 +45,7 @@ Ada is alive.
 
 ## Requirements
 
-- [Zig](https://ziglang.org/download/) 0.16 
+- [Zig](https://ziglang.org/download/) 0.17 
 - A working GNAT installation (e.g., from AdaCore, Homebrew, or Simon's builds)
 - macOS, Linux, or any Unix-like system with `bash`
 

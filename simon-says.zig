@@ -34,7 +34,7 @@ fn findAdalibPath(allocator: std.mem.Allocator, io: std.Io, gnatmake_path: []con
     while (lines.next()) |line| {
         const trimmed = std.mem.trim(u8, line, " \r");
         if (std.mem.endsWith(u8, trimmed, "adalib")) {
-            return allocator.dupeZ(u8, trimmed);
+            return std.mem.Allocator.dupeSentinel(allocator, u8, trimmed, 0);
         }
     }
     return error.AdalibNotFound;
@@ -60,7 +60,7 @@ fn searchGnatmake(allocator: std.mem.Allocator, io: std.Io) ![:0]const u8 {
         if (run_result) |*res| {
             allocator.free(res.stdout);
             allocator.free(res.stderr);
-            return allocator.dupeZ(u8, cached) catch unreachable;
+            return std.mem.Allocator.dupeSentinel(allocator, u8, cached, 0) catch unreachable;
         }
         cwd.deleteFile(io, cache_path) catch {};
     } else |_| {}
@@ -75,7 +75,7 @@ fn searchGnatmake(allocator: std.mem.Allocator, io: std.Io) ![:0]const u8 {
                 defer file.close(io);
                 file.writeStreamingAll(io, out) catch {};
             } else |_| {}
-            const duped = allocator.dupeZ(u8, out) catch unreachable;
+            const duped = std.mem.Allocator.dupeSentinel(allocator, u8, out, 0) catch unreachable;
             allocator.free(res.stdout);
             allocator.free(res.stderr);
             return duped;
@@ -90,13 +90,13 @@ fn searchGnatmake(allocator: std.mem.Allocator, io: std.Io) ![:0]const u8 {
         defer allocator.free(full);
         if (cwd.openFile(io, full, .{})) |file| {
             file.close(io);
-            return allocator.dupeZ(u8, full) catch unreachable;
+            return std.mem.Allocator.dupeSentinel(allocator, u8, full, 0) catch unreachable;
         } else |_| {}
     }
 
     const prefix_dirs = [_][]const u8{ "/usr/local", "/opt" };
     for (prefix_dirs) |prefix| {
-        var prefix_dir = std.Io.Dir.openDirAbsolute(io, prefix, .{}) catch continue;
+        var prefix_dir = std.Io.Dir.openDirAbsolute(io, prefix, .{ .iterate = true }) catch continue;
         defer prefix_dir.close(io);
         var it = prefix_dir.iterate();
         while (try it.next(io)) |entry| {
@@ -105,7 +105,7 @@ fn searchGnatmake(allocator: std.mem.Allocator, io: std.Io) ![:0]const u8 {
                 defer allocator.free(full);
                 if (cwd.openFile(io, full, .{})) |file| {
                     file.close(io);
-                    return allocator.dupeZ(u8, full) catch unreachable;
+                    return std.mem.Allocator.dupeSentinel(allocator, u8, full, 0) catch unreachable;
                 } else |_| {}
             }
         }
@@ -146,7 +146,7 @@ pub fn main() !void {
             allocator.free(r.stderr);
         }
 
-        const ver_file = cwd.openFile(io, ver_file_path, .{}) catch break :blk try allocator.dupeZ(u8, "unknown");
+        const ver_file = cwd.openFile(io, ver_file_path, .{}) catch break :blk try std.mem.Allocator.dupeSentinel(allocator, u8, "unknown", 0);
         defer ver_file.close(io);
         const meta = try ver_file.stat(io);
         const buf = try allocator.alloc(u8, meta.size);
@@ -158,7 +158,7 @@ pub fn main() !void {
         var parts = std.mem.splitScalar(u8, first_line, ' ');
         _ = parts.first();
         const ver = parts.next() orelse "unknown";
-        break :blk try allocator.dupeZ(u8, ver);
+        break :blk try std.mem.Allocator.dupeSentinel(allocator, u8, ver, 0);
     };
     defer allocator.free(version);
 
@@ -182,7 +182,7 @@ pub fn main() !void {
             const arch = if (std.mem.eql(u8, std.mem.sliceTo(&uts.machine, 0), "arm64")) "aarch64" else std.mem.sliceTo(&uts.machine, 0);
             var buf: [256]u8 = undefined;
             const fallback = try std.fmt.bufPrint(&buf, "{s}-apple-darwin{s}", .{ arch, std.mem.sliceTo(&uts.release, 0) });
-            break :blk try allocator.dupeZ(u8, fallback);
+            break :blk try std.mem.Allocator.dupeSentinel(allocator, u8, fallback, 0);
         };
         defer target_file.close(io);
         const meta = try target_file.stat(io);
@@ -190,7 +190,7 @@ pub fn main() !void {
         defer allocator.free(buf);
         _ = try target_file.readPositionalAll(io, buf, 0);
         const trimmed = std.mem.trimEnd(u8, buf[0..meta.size], "\n");
-        break :blk try allocator.dupeZ(u8, trimmed);
+        break :blk try std.mem.Allocator.dupeSentinel(allocator, u8, trimmed, 0);
     };
     defer allocator.free(target);
 
